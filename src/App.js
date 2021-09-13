@@ -1,25 +1,33 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState, useEffect } from "react";
 
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+	const [username, setUsername] = useState('');
+	const [password, setPasword] = useState('');
+	const [userData, setUserData] = useState();
+	const [view, setView] = useState();
+
+	const login = (username, password) => {
+		fetch("https://tanmoysg.com/is-running/" + username + "/login", {
+			method: "POST",
+			cache: "no-cache",
+			headers: {
+				"content_type": "application/json",
+			},
+			body: JSON.stringify({ "password": password })
+		}).then(response => {
+			return response.json()
+		}).then(res => {
+			setUserData(res);
+			setView();
+		})
+	}
+
+	return (
+		<ThemeProvider theme={theme}>
+			<CssBaseline />
+
+		</ThemeProvider>
+	);
 }
 
 export default App;
