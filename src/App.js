@@ -61,7 +61,7 @@ function App() {
 	return (
 		<ThemeProvider theme={darkTheme}>
 			<CssBaseline />
-			<Container maxWidth="xl" style={{ padding: "25px", height: "100vh" }}>
+			<Container maxWidth="xl" style={{ padding: "25px", height: "100%" }}>
 				{
 					view ? <Home /> :
 						<Grid
