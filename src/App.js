@@ -3,7 +3,7 @@ import Home from "./components/home.component";
 import Container from "@mui/material/Container"
 import { useTheme, ThemeProvider, createTheme } from '@mui/material/styles';
 import { CssBaseline, Divider, Grid, Paper, Typography, TextField, Button } from "@mui/material";
-
+import useReactFontLoader from 'react-font-loader'
 
 function App() {
 
@@ -14,6 +14,11 @@ function App() {
 				default: "#1C1C1E" /*#000408*/
 			}
 		},
+	});
+
+	useReactFontLoader({
+		url:
+			"https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Montserrat:wght@100;200;300;400;500;600;700;800;900&family=Work+Sans:wght@100;200;300;400;500;600;700;800;900&display=swap",
 	});
 
 
@@ -38,14 +43,14 @@ function App() {
 			window.sessionStorage.setItem("name", res.name);
 			window.sessionStorage.setItem("token", res.token);
 			window.sessionStorage.setItem("password", password)
-			setView(<Home />);
+			setView("logged_in");
 		})
 	}
 
 
 	useEffect(() => {
 		if (window.sessionStorage.getItem("status") === 'logged_in') {
-			setView(<Home />);
+			setView("logged_in");
 		}
 	}, [])
 
@@ -58,7 +63,7 @@ function App() {
 			<CssBaseline />
 			<Container maxWidth="xl" style={{ padding: "25px", height: "100vh" }}>
 				{
-					view ? view :
+					view ? <Home /> :
 						<Grid
 							container
 							direction="row"

@@ -2,4 +2,4 @@
 
 Notes:
 
-- [ ] Use Ora Spinner
+- [ ] Use Ora Spinner - https://www.npmjs.com/package/ora
