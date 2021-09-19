@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Grid, Paper, Typography, Divider, Button, TextField, Autocomplete, Chip, Select, MenuItem } from "@mui/material";
+import { Grid, Paper, Typography, Divider, Button, TextField, Autocomplete, Chip, Select, MenuItem, Tooltip, IconButton } from "@mui/material";
 import Spinner from "react-cli-spinners/dist";
+import toast, { Toaster } from 'react-hot-toast';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheckCircle, faCircle, faExclamationCircle, faFolderPlus, faHistory, faLayerGroup, faLink, faMouse, faPlus, faPlusCircle, faRocket, faSignOutAlt, faTimes, faUserAstronaut } from '@fortawesome/free-solid-svg-icons';
+import { faCheckCircle, faCircle, faExclamationCircle, faFolderPlus, faHistory, faLink, faPlus, faRocket, faSignOutAlt, faTimes, faUserAstronaut } from '@fortawesome/free-solid-svg-icons';
 
 export default function Home() {
 
@@ -21,6 +22,39 @@ export default function Home() {
     const [mailingList, setMailingList] = useState([]);
 
     const [loadStatus, setLoadStatus] = useState('Ready');
+    const [topToolBar, setTopToolBar] = useState("none");
+
+    // Random Check EP
+    const [randomCheckEP, setRandomCheckEP] = useState();
+
+
+    function handleRandomCheck() {
+        const searchEp = "https://tanmoysg.com/is-running/check-uptime?endpoint=" + randomCheckEP;
+        fetch(searchEp, {
+            method: "GET",
+            cache: "no-cache",
+            headers: {
+                "content_type": "application/json",
+            }
+        }).then(response => {
+            return response.json()
+        }).then(result => {
+            if (result.response === "Success") {
+                toast.success("The Endpoint is Up.");
+            } else {
+                toast.error("The Endpoint is Down.");
+            }
+        })
+    }
+
+    const clearAddEPForm = () => {
+        setEndpointName();
+        setEndpointURL();
+        setEndpointDescription();
+        setEndpointRoutine();
+        setMailingList([]);
+        setTopToolBar("none");
+    }
 
     const handleAddMail = (event, mail) => {
         if (event.key === 'Enter') {
@@ -33,7 +67,7 @@ export default function Home() {
     }
 
 
-    function getIRStatusData(username, password) {
+    function getIRStatusData() {
         setLoadStatus("Loading");
         const endpoint = "https://tanmoysg.com/is-running/" + username + "/get/status"
         fetch(endpoint, {
@@ -72,6 +106,43 @@ export default function Home() {
         })
     }
 
+    function handleAddEndpoint() {
+        setLoadStatus("Loading");
+        if (endpointURL !== undefined && endpointName !== undefined && endpointDescription !== undefined && mailingList.length > 0 && endpointRoutine !== undefined) {
+            const endpoint = "https://tanmoysg.com/is-running/" + username + "/add/endpoint"
+            fetch(endpoint, {
+                method: "POST",
+                cache: "no-cache",
+                headers: {
+                    "content_type": "application/json",
+                },
+                body: JSON.stringify({
+                    "password": password,
+                    "endpoint": endpointURL,
+                    "name": endpointName,
+                    "description": endpointDescription,
+                    "recipients": mailingList,
+                    "routine": endpointRoutine
+                })
+            }).then(response => {
+                return response.json();
+            }).then(res => {
+                console.log(res.response)
+                if (res.response === "new_ep_added") {
+                    toast.success("Endpoint Added!");
+                    getIRStatusData();
+                    clearAddEPForm();
+                } else {
+                    toast.error("Endpoint Already Exists!")
+                }
+            });
+            setLoadStatus("Ready");
+        } else {
+            toast.error("Missing Parameters")
+        }
+
+    }
+
     useEffect(() => {
         setUsername(window.sessionStorage.getItem("email"));
         setPassword(window.sessionStorage.getItem("password"));
@@ -88,7 +159,7 @@ export default function Home() {
             alignItems="flex-start"
             spacing={2}
         >
-
+            <Toaster />
             <Grid item xs={12} sm={12} md={4} lg={4} xl={4}>
                 <Paper variant="outlined" style={{ marginBottom: "10px", padding: "20px", borderRadius: "10px", boxShadow: "rgb(8 7 17 / 50%) 0px 0px 12px 0px", backgroundColor: "rgb(8, 7, 17)", color: "rgb(187, 183, 223)" }}>
                     <Typography style={{ fontFamily: "Work Sans", fontSize: "1.2rem" }}>
@@ -158,8 +229,6 @@ export default function Home() {
                                 {*/}
                             </Grid>
                         </Grid>
-
-
                     </Typography>
                     <Divider style={{ margin: "10px 0" }} />
                     {/*}
@@ -178,7 +247,6 @@ export default function Home() {
                                 </Grid>
                             </Grid>
                         </Typography>
-
                     </div>
                     <div style={{ margin: "15px 0" }}>
                         <Typography style={{ fontFamily: "Work Sans", fontSize: "1rem" }}>
@@ -237,12 +305,14 @@ export default function Home() {
                                 <span style={{ fontWeight: "600" }}>EP Library</span>
                             </Grid>
                             <Grid item>
-                                <FontAwesomeIcon icon={faPlus} style={{ color: "#3faf62" }} />
+                                <IconButton aria-label="delete" onClick={() => { setTopToolBar('add_ep_panel') }}>
+                                    <FontAwesomeIcon icon={faPlus} style={{ color: "#3faf62" }} />
+                                </IconButton>
                             </Grid>
                         </Grid>
                     </Typography>
                     <Divider style={{ margin: "10px 0" }} />
-                    <div style={{ marginTop: "20px" }}>
+                    <div style={{ marginTop: "20px", wordWrap: "break-word" }}>
                         <Typography style={{ fontFamily: "Work Sans", fontSize: "1rem" }}>
                             Down Endpoints
                             <span style={{ margin: "0 0 0 10px", fontWeight: "600", padding: "4px 7px", border: "3px solid #AA0023", borderRadius: "75px" }}>
@@ -254,14 +324,16 @@ export default function Home() {
                             {
                                 metrics ? metrics['listOfDownEPs'].map((ep) => {
                                     return (
-                                        <div style={{ margin: "2px 0" }}>
-                                            <Typography style={{ fontFamily: "Work Sans", fontSize: "0.8rem" }}>
-                                                <FontAwesomeIcon icon={faExclamationCircle} style={{ marginRight: "7.5px", color: "#AA0023" }} />
-                                                {ep}
-                                            </Typography>
-                                        </div>
+                                        <Tooltip title={ep} arrow={true} >
+                                            <div style={{ margin: "2px 0", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
+                                                <Typography style={{ fontFamily: "Work Sans", fontSize: "0.8rem" }}>
+                                                    <FontAwesomeIcon icon={faExclamationCircle} style={{ marginRight: "7.5px", color: "#AA0023" }} />
+                                                    {ep}
+                                                </Typography>
+                                            </div>
+                                        </Tooltip>
                                     )
-                                }) : undefined
+                                }) : <Typography style={{ fontFamily: "Work Sans", fontSize: "0.8rem" }}>Wohoo! No Downtime!</Typography>
                             }
                         </div>
                     </div>
@@ -277,12 +349,14 @@ export default function Home() {
                             {
                                 metrics ? metrics['listOfUpEPs'].map((ep) => {
                                     return (
-                                        <div style={{ margin: "2px 0" }}>
-                                            <Typography style={{ fontFamily: "Work Sans", fontSize: "0.8rem" }}>
-                                                <FontAwesomeIcon icon={faCheckCircle} style={{ marginRight: "7.5px", color: "#3faf62" }} />
-                                                {ep}
-                                            </Typography>
-                                        </div>
+                                        <Tooltip title={ep} arrow={true} style={{ fontFamily: "Work Sans" }} >
+                                            <div style={{ margin: "2px 0", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
+                                                <Typography style={{ fontFamily: "Work Sans", fontSize: "0.8rem" }}>
+                                                    <FontAwesomeIcon icon={faCheckCircle} style={{ marginRight: "7.5px", color: "#3faf62" }} />
+                                                    {ep}
+                                                </Typography>
+                                            </div>
+                                        </Tooltip>
                                     )
                                 }) : undefined
                             }
@@ -316,11 +390,11 @@ export default function Home() {
 
                         <div >
                             <Typography style={{ fontFamily: "Work Sans" }}>Endpoint</Typography>
-                            <TextField fullWidth onChange={e => { }}
+                            <TextField fullWidth onChange={e => { setRandomCheckEP(e.target.value) }}
                                 style={{ fontFamily: "Work Sans" }}
                             />
                             <div style={{ margin: "10px 0 10px 0" }} >
-                                <Button onClick={() => { }} variant="outlined" size="large"
+                                <Button onClick={handleRandomCheck} variant="outlined" size="large"
                                     style={{ width: "100%", fontFamily: "Work Sans", color: "rgb(187, 183, 223)" }}
                                 >
                                     Check Endpoint
@@ -328,105 +402,106 @@ export default function Home() {
                             </div>
                         </div>
                     </div>
-
                 </Paper>
-
             </Grid>
             <Grid item xs={12} sm={12} md={8} lg={8} xl={8}>
-                <Paper variant="outlined" style={{ padding: "25px", borderRadius: "10px", boxShadow: "rgb(8 7 17 / 50%) 0px 0px 12px 0px", backgroundColor: "rgb(8, 7, 17)", color: "rgb(187, 183, 223)" }}>
-                    <Typography style={{ fontFamily: "Work Sans", fontSize: "1.2rem" }}>
-                        <Grid
-                            container
-                            direction="row"
-                            justifyContent="space-between"
-                            alignItems="center"
-                        >
-                            <Grid item>
-                                <FontAwesomeIcon icon={faFolderPlus} style={{ marginRight: "7.5px" }} />
-                                <span style={{ fontWeight: "600" }}>Add to EP Library</span>
-                            </Grid>
-                            <Grid item>
-                                <FontAwesomeIcon icon={faTimes} style={{ color: "#AA0023" }} />
-                            </Grid>
-                        </Grid>
-                    </Typography>
-                    <Divider style={{ margin: "10px 0" }} />
-                    {/* Add New EP */}
-                    <div style={{ marginTop: "15px" }}>
-                        <Grid
-                            container
-                            direction="row"
-                            justifyContent="space-between"
-                            alignItems="center"
-                            spacing={1}
-                        >
-                            <Grid item xs={12} sm={12} md={12} lg={8} xl={8}>
-                                <div style={{ marginTop: "10px" }}>
-                                    <Typography style={{ fontFamily: "Work Sans", marginBottom: "7.5px" }}>Endpoint</Typography>
-                                    <TextField fullWidth onChange={e => { setEndpointURL(e.target.value) }}
-                                        style={{ fontFamily: "Work Sans" }}
-                                    />
-                                </div>
-                            </Grid>
-                            <Grid item xs={12} sm={12} md={12} lg={4} xl={4}>
-                                <div style={{ marginTop: "10px" }}>
-                                    <Typography style={{ fontFamily: "Work Sans", marginBottom: "7.5px" }}>Run Routine Check every </Typography>
-                                    <Select
-                                        variant={setEndpointRoutine}
-                                        fullWidth
-                                        onSelect={(e) => { setEndpointRoutine(e.target.value) }}
-                                    >
-                                        <MenuItem value={6}>6 Hours - Recommended for Vital Services</MenuItem>
-                                        <MenuItem value={12}>12 Hours - Recommended for Moderately Important Services </MenuItem>
-                                        <MenuItem value={24}>24 Hours - Recommended for other non-vital Services</MenuItem>
-                                    </Select>
-                                </div>
-                            </Grid>
-                            <Grid item xs={12} sm={12} md={12} lg={6} xl={6}>
-                                <div style={{ marginTop: "10px" }}>
-                                    <Typography style={{ fontFamily: "Work Sans", marginBottom: "7.5px" }}>Name</Typography>
-                                    <TextField fullWidth onChange={e => { setEndpointName(e.target.value) }}
-                                        style={{ fontFamily: "Work Sans" }}
-                                    />
-                                </div>
-                            </Grid>
-                            <Grid item xs={12} sm={12} md={12} lg={6} xl={6}>
-                                <div style={{ marginTop: "10px" }}>
-                                    <Typography style={{ fontFamily: "Work Sans", marginBottom: "7.5px" }}>Description</Typography>
-                                    <TextField fullWidth onChange={e => { setEndpointDescription(e.target.value) }}
-                                        style={{ fontFamily: "Work Sans" }}
-                                    />
-                                </div>
-                            </Grid>
-                            <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-                                <div style={{ marginTop: "10px" }}>
-                                    <Typography style={{ fontFamily: "Work Sans", marginBottom: "7.5px" }}>Alerts Mailing List</Typography>
-                                    <div style={{ border: "1px solid #616161", padding: "15px 10px", borderRadius: "5px", margin: "0 0 10px 0" }} >
-                                        {
-                                            mailingList.length > 0 ? mailingList.map((mail) => {
-                                                return (
-                                                    <Chip label={mail} variant="outlined" onDelete={() => { handleDeleteFromMailList(mail) }} style={{ border: "3px solid #BBB7DF", color: "#BBB7DF", fontFamily: "Work Sans", marginRight: "5px" }} />
-                                                )
-                                            }) : <span style={{ color: "#BBB7DF", fontFamily: "Work Sans" }}>Add Mails</span>
-                                        }
-                                    </div>
-                                    <TextField
-                                        fullWidth onKeyDown={(e) => { handleAddMail(e, e.target.value) }}
-                                        style={{ fontFamily: "Work Sans" }} placeholder="Type email and press enter"
-                                    />
-                                </div>
-                            </Grid>
-                        </Grid>
+                {
+                    topToolBar === "none" ? undefined :
+                        <Paper variant="outlined" style={{ padding: "25px", borderRadius: "10px", boxShadow: "rgb(8 7 17 / 50%) 0px 0px 12px 0px", backgroundColor: "rgb(8, 7, 17)", color: "rgb(187, 183, 223)" }}>
+                            <Typography style={{ fontFamily: "Work Sans", fontSize: "1.2rem" }}>
+                                <Grid
+                                    container
+                                    direction="row"
+                                    justifyContent="space-between"
+                                    alignItems="center"
+                                >
+                                    <Grid item>
+                                        <FontAwesomeIcon icon={faFolderPlus} style={{ marginRight: "7.5px" }} />
+                                        <span style={{ fontWeight: "600" }}>Add to EP Library</span>
+                                    </Grid>
+                                    <Grid item>
+                                        <IconButton aria-label="delete" onClick={() => { setTopToolBar('none') }}>
+                                            <FontAwesomeIcon icon={faTimes} style={{ color: "#AA0023" }} />
+                                        </IconButton>
+                                    </Grid>
+                                </Grid>
+                            </Typography>
+                            <Divider style={{ margin: "10px 0" }} />
 
-                        <div style={{ margin: "15px 0 10px 0" }} >
-                            <Button onClick={() => { }} variant="outlined" size="large"
-                                style={{ width: "100%", fontFamily: "Work Sans", color: "rgb(187, 183, 223)" }}
-                            >
-                                Add Endpoint
-                            </Button>
-                        </div>
-                    </div>
-                </Paper>
+                            <div style={{ marginTop: "15px" }}>
+                                <Grid
+                                    container
+                                    direction="row"
+                                    justifyContent="space-between"
+                                    alignItems="center"
+                                    spacing={1}
+                                >
+                                    <Grid item xs={12} sm={12} md={12} lg={8} xl={8}>
+                                        <div style={{ marginTop: "10px" }}>
+                                            <Typography style={{ fontFamily: "Work Sans", marginBottom: "7.5px" }}>Endpoint</Typography>
+                                            <TextField fullWidth onChange={e => { setEndpointURL(e.target.value) }}
+                                                style={{ fontFamily: "Work Sans" }}
+                                            />
+                                        </div>
+                                    </Grid>
+                                    <Grid item xs={12} sm={12} md={12} lg={4} xl={4}>
+                                        <div style={{ marginTop: "10px" }}>
+                                            <Typography style={{ fontFamily: "Work Sans", marginBottom: "7.5px" }}>Run Routine Check every </Typography>
+                                            <Select
+                                                fullWidth
+                                            >
+                                                <MenuItem value={6} onClick={(e) => { setEndpointRoutine(e.target.value) }} >6 Hours - Recommended for Vital Services</MenuItem>
+                                                <MenuItem value={12} onClick={(e) => { setEndpointRoutine(e.target.value) }} >12 Hours - Recommended for Moderately Important Services </MenuItem>
+                                                <MenuItem value={24} onClick={(e) => { setEndpointRoutine(e.target.value) }} >24 Hours - Recommended for other non-vital Services</MenuItem>
+                                            </Select>
+                                        </div>
+                                    </Grid>
+                                    <Grid item xs={12} sm={12} md={12} lg={6} xl={6}>
+                                        <div style={{ marginTop: "10px" }}>
+                                            <Typography style={{ fontFamily: "Work Sans", marginBottom: "7.5px" }}>Name</Typography>
+                                            <TextField fullWidth onChange={e => { setEndpointName(e.target.value) }}
+                                                style={{ fontFamily: "Work Sans" }}
+                                            />
+                                        </div>
+                                    </Grid>
+                                    <Grid item xs={12} sm={12} md={12} lg={6} xl={6}>
+                                        <div style={{ marginTop: "10px" }}>
+                                            <Typography style={{ fontFamily: "Work Sans", marginBottom: "7.5px" }}>Description</Typography>
+                                            <TextField fullWidth onChange={e => { setEndpointDescription(e.target.value) }}
+                                                style={{ fontFamily: "Work Sans" }}
+                                            />
+                                        </div>
+                                    </Grid>
+                                    <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
+                                        <div style={{ marginTop: "10px" }}>
+                                            <Typography style={{ fontFamily: "Work Sans", marginBottom: "7.5px" }}>Alerts Mailing List</Typography>
+                                            <div style={{ border: "1px solid #616161", padding: "15px 10px", borderRadius: "5px", margin: "0 0 10px 0" }} >
+                                                {
+                                                    mailingList.length > 0 ? mailingList.map((mail) => {
+                                                        return (
+                                                            <Chip label={mail} variant="outlined" onDelete={() => { handleDeleteFromMailList(mail) }} style={{ border: "3px solid #BBB7DF", color: "#BBB7DF", fontFamily: "Work Sans", marginRight: "5px" }} />
+                                                        )
+                                                    }) : <span style={{ color: "#BBB7DF", fontFamily: "Work Sans" }}>Add Mails</span>
+                                                }
+                                            </div>
+                                            <TextField
+                                                fullWidth onKeyDown={(e) => { handleAddMail(e, e.target.value) }}
+                                                style={{ fontFamily: "Work Sans" }} placeholder="Type email and press enter"
+                                            />
+                                        </div>
+                                    </Grid>
+                                </Grid>
+
+                                <div style={{ margin: "15px 0 10px 0" }} >
+                                    <Button onClick={handleAddEndpoint} variant="outlined" size="large"
+                                        style={{ width: "100%", fontFamily: "Work Sans", color: "rgb(187, 183, 223)" }}
+                                    >
+                                        Add Endpoint
+                                    </Button>
+                                </div>
+                            </div>
+                        </Paper>
+                }
             </Grid>
             {/*}
             <Grid item xs={4} >
