@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { Grid, Paper, Typography, Divider, Button, TextField, Autocomplete, Chip, Select, MenuItem, Tooltip, IconButton } from "@mui/material";
+import { Grid, Paper, Typography, Divider, Button, TextField, Accordion, AccordionDetails, AccordionSummary, Chip, Select, MenuItem, Tooltip, IconButton } from "@mui/material";
 import Spinner from "react-cli-spinners/dist";
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import toast, { Toaster } from 'react-hot-toast';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheckCircle, faCircle, faExclamationCircle, faFolderPlus, faHistory, faLink, faPlus, faRocket, faSignOutAlt, faTimes, faUserAstronaut } from '@fortawesome/free-solid-svg-icons';
+import { faCheckCircle, faCircle, faExclamationCircle, faFolderPlus, faHistory, faLayerGroup, faLink, faPlus, faRocket, faSignOutAlt, faTimes, faUserAstronaut } from '@fortawesome/free-solid-svg-icons';
 
 export default function Home() {
 
+    // User Data Hooks
     const [iRData, setIRData] = useState({});
     const [name, setName] = useState(window.sessionStorage.getItem("name"))
     const [username, setUsername] = useState(window.sessionStorage.getItem("email"))
@@ -21,11 +23,19 @@ export default function Home() {
     const [endpointRoutine, setEndpointRoutine] = useState();
     const [mailingList, setMailingList] = useState([]);
 
+    // Util Hooks
     const [loadStatus, setLoadStatus] = useState('Ready');
     const [topToolBar, setTopToolBar] = useState("none");
 
-    // Random Check EP
+    // Random Check EP Hook
     const [randomCheckEP, setRandomCheckEP] = useState();
+
+    // Data Expansion Panel Hooks
+    const [expanded, setExpanded] = React.useState(false);
+
+    const handleExandPanel = (panel) => (event, isExpanded) => {
+        setExpanded(isExpanded ? panel : false);
+    };
 
 
     function handleRandomCheck() {
@@ -150,7 +160,7 @@ export default function Home() {
         getIRStatusData(username, password)
     }, [])
 
-
+    console.log(iRData)
     return (
         <Grid
             container
@@ -379,11 +389,6 @@ export default function Home() {
                                 <FontAwesomeIcon icon={faSignOutAlt} style={{ color: "#AA0023" }} />
                             </Grid>
                         </Grid>
-
-
-                        {/*}
-                        <span style={{ margin: "0 0 0 10px", fontWeight: "600", padding: "5px 7px", border: "3px solid rgb(187, 183, 223)", borderRadius: "50px" }}>{iRData ? Object.keys(iRData).length : 0}</span>
-                        {*/}
                     </Typography>
                     <Divider style={{ margin: "10px 0" }} />
                     <div style={{ marginTop: "15px" }}>
@@ -502,6 +507,81 @@ export default function Home() {
                             </div>
                         </Paper>
                 }
+                <div style={{ marginTop: "20px" }} >
+                    <Typography style={{ fontFamily: "Work Sans", fontSize: "1.2rem", color: "rgb(187, 183, 223)" }}>
+                        <Grid
+                            container
+                            direction="row"
+                            justifyContent="space-between"
+                            alignItems="center"
+                        >
+                            <Grid item>
+                                <FontAwesomeIcon icon={faLayerGroup} style={{ marginRight: "7.5px" }} />
+                                <span style={{ fontWeight: "600" }}>Endpoints Library</span>
+                            </Grid>
+                            {/*<Grid item>
+                                <FontAwesomeIcon icon={faSignOutAlt} style={{ color: "#AA0023" }} />
+                            </Grid>*/}
+                        </Grid>
+                    </Typography>
+                    <Divider style={{ margin: "10px 0" }} />
+                    <div>
+                        {
+                            metrics ? [...metrics['listOfDownEPs'], ...metrics['listOfUpEPs']].map((ep) => {
+                                return (
+                                    <Accordion expanded={expanded === iRData[ep]['_id']}
+                                        onChange={handleExandPanel(iRData[ep]['_id'])}
+                                        style={{ padding: "5px", backgroundColor: "rgb(8, 7, 17)", backgroundImage: "none", fontFamily: "Work Sans", color: "rgb(187, 183, 223)" }}
+                                    >
+                                        <AccordionSummary
+                                            expandIcon={<ExpandMoreIcon />}
+                                            aria-controls="panel1bh-content"
+                                            id="panel1bh-header"
+                                            style={{ padding: "7.5px 15px", color: "rgb(187, 183, 223)" }}
+                                        >
+                                            <Typography sty={{ width: '40%', flexShrink: 0 }}>
+                                                <Tooltip title={ep} arrow={true} style={{ fontFamily: "Work Sans" }} >
+                                                    <Typography style={{ fontFamily: "Work Sans", overflow: "hidden" }}>
+                                                        {
+                                                            iRData[ep]['running'] === "Downtime" ?
+                                                                <FontAwesomeIcon icon={faExclamationCircle} style={{ marginRight: "7.5px", color: "#AA0023" }} />
+                                                                : <FontAwesomeIcon icon={faCheckCircle} style={{ marginRight: "7.5px", color: "#3faf62" }} />
+                                                        }
+                                                        {ep.replace(/(^\w+:|^)\/\//, '')}
+                                                    </Typography>
+                                                </Tooltip>
+                                            </Typography>
+                                            <Typography sx={{ width: "20%", display: { xs: 'none', lg: 'block' } }} style={{ fontFamily: "Work Sans" }}>
+                                                {
+                                                    iRData[ep]['running'] === "Downtime" ?
+                                                        <span style={{ margin: "0 0 0 10px", fontWeight: "400", padding: "4px 7px", border: "3px solid #AA0023", borderRadius: "75px" }}>
+                                                            <FontAwesomeIcon icon={faCircle} style={{ marginRight: "7.5px", color: "#AA0023" }} />
+                                                            {iRData[ep]['status']}
+                                                        </span>
+                                                        : <span style={{ margin: "0 0 0 10px", fontWeight: "400", padding: "4px 7px", border: "3px solid #3faf62", borderRadius: "75px" }}>
+                                                            <FontAwesomeIcon icon={faCircle} style={{ marginRight: "7.5px", color: "#3faf62" }} />
+                                                            {iRData[ep]['status']}
+                                                        </span>
+                                                }
+                                            </Typography>
+                                            <Typography sx={{ display: { xs: 'none', lg: 'block' } }} style={{ fontFamily: "Work Sans", fontSize: "0.8rem" }}>
+                                                Last Checked: {iRData[ep]['last-check-timestamp']}
+                                            </Typography>
+
+                                        </AccordionSummary>
+                                        <AccordionDetails style={{ padding: "7.5px 15px", color: "rgb(187, 183, 223)" }}>
+                                            <Typography>
+                                                Nulla facilisi. Phasellus sollicitudin nulla et quam mattis feugiat.
+                                                Aliquam eget maximus est, id dignissim quam.
+                                            </Typography>
+                                        </AccordionDetails>
+                                    </Accordion>
+                                )
+                            }) : <Typography style={{ fontFamily: "Work Sans", fontSize: "0.8rem" }}>Wohoo! No Downtime!</Typography>
+                        }
+
+                    </div>
+                </div>
             </Grid>
             {/*}
             <Grid item xs={4} >

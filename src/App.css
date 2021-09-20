@@ -4,6 +4,18 @@
   text-align: center;
 }
 
+/* For Mobile */
+@media only screen and (max-width: 960px) {
+  .collapsible-typography{
+    width: 90%;
+  }
+}
+
+/* Large Screen */
+@media only screen and (min-width: 961px) {
+  
+}
+
 .App-logo {
   height: 40vmin;
   pointer-events: none;
