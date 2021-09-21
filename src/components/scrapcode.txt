@@ -1,0 +1,52 @@
+{/* For Mobile */}
+                                                                        <Paper variant="outlined" style={{ padding: "7.5px 10px", width: "80%", marginRight: "10px" }} sx={{ display: { lg: 'none' } }}>
+                                                                            <Typography style={{ fontFamily: "Work Sans", fontSize: "0.8rem" }}>
+                                                                                {
+                                                                                    report['running'] === "Downtime" ?
+                                                                                        <FontAwesomeIcon icon={faExclamationCircle} style={{ marginRight: "7.5px", color: "#AA0023" }} />
+                                                                                        : <FontAwesomeIcon icon={faCheckCircle} style={{ marginRight: "7.5px", color: "#3faf62" }} />
+                                                                                }
+                                                                                {report['status']} - {report['response']}
+                                                                            </Typography>
+                                                                            <Typography style={{ fontFamily: "Work Sans", fontSize: "0.8rem" }}>
+                                                                                Response Time - {report['response-time']}s
+                                                                            </Typography>
+                                                                            {
+                                                                                report['redirects'] !== null ?
+                                                                                    <Accordion
+                                                                                        style={{ borderRadius: "5px", margin: "5px 0" }}
+                                                                                    >
+                                                                                        <AccordionSummary
+                                                                                            expandIcon={<ExpandMoreIcon />}
+                                                                                            aria-controls="panel1a-content"
+                                                                                            id="panel1a-header"
+                                                                                            style={{ margin: "0 0" }}
+                                                                                        >
+                                                                                            <Typography style={{ fontFamily: "Work Sans", fontSize: "0.8rem" }}>{report['redirects'].length} Redirects</Typography>
+                                                                                        </AccordionSummary>
+                                                                                        <AccordionDetails style={{ margin: "0 0" }} >
+                                                                                            <Typography style={{ fontFamily: "Work Sans", fontSize: "0.8rem" }}>
+                                                                                                <center>
+                                                                                                    {ep}
+                                                                                                    {
+                                                                                                        report['redirects'].map((url) => {
+                                                                                                            return (
+                                                                                                                <span>
+                                                                                                                    <div><FontAwesomeIcon icon={faArrowDown} style={{ margin: "0 3px", color: "#3faf62" }} /></div>
+                                                                                                                    <div>{url.replace(/(^\w+:|^)\/\//, '')}</div>
+                                                                                                                </span>
+                                                                                                            );
+                                                                                                        })
+                                                                                                    }
+                                                                                                </center>
+                                                                                            </Typography>
+                                                                                        </AccordionDetails>
+                                                                                    </Accordion>
+                                                                                    : <span>No Redirects</span>
+                                                                            }
+                                                                            <Typography style={{ fontFamily: "Work Sans", fontSize: "0.8rem", overflow: "auto" }}>
+                                                                            </Typography>
+                                                                            <Typography style={{ fontFamily: "Work Sans", fontSize: "0.8rem" }}>
+                                                                                Checked at {report['timestamp']}
+                                                                            </Typography>
+                                                                        </Paper>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Home from "./components/home.component";
 import Container from "@mui/material/Container"
-import { useTheme, ThemeProvider, createTheme } from '@mui/material/styles';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { CssBaseline, Divider, Grid, Paper, Typography, TextField, Button } from "@mui/material";
 import useReactFontLoader from 'react-font-loader';
 import './App.css';

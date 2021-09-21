@@ -9,6 +9,9 @@
   .collapsible-typography{
     width: 90%;
   }
+  .report-panel{
+    min-width: 100%
+  }
 }
 
 /* Large Screen */

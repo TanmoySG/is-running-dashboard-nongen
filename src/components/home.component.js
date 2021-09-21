@@ -1,12 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { Grid, Paper, Typography, Divider, Button, TextField, Accordion, AccordionDetails, AccordionSummary, Chip, Select, MenuItem, Tooltip, IconButton } from "@mui/material";
+import { Grid, Paper, Typography, Divider, Button, TextField, Accordion, AccordionDetails, AccordionSummary, Chip, Select, MenuItem, Tooltip, IconButton, Avatar, Dialog, DialogTitle, DialogActions, DialogContent, DialogContentText } from "@mui/material";
 import Spinner from "react-cli-spinners/dist";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import toast, { Toaster } from 'react-hot-toast';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheckCircle, faCircle, faExclamationCircle, faFolderPlus, faHistory, faLayerGroup, faLink, faPlus, faRocket, faSignOutAlt, faTimes, faUserAstronaut } from '@fortawesome/free-solid-svg-icons';
+import { faArrowDown, faChartLine, faCheckCircle, faCircle, faCog, faExclamationCircle, faFolderPlus, faHistory, faLayerGroup, faLink, faPlus, faRocket, faSignOutAlt, faTimes, faTrash, faUserAstronaut } from '@fortawesome/free-solid-svg-icons';
+import '../App.css';
+import ResponseTimeChart from "./chart.component";
+
 
 export default function Home() {
+
+    // UI Runner Components
+    const loadingSpinners = ["dots2", "moon"]
+    const [openDeleteBox, setOpenDeleteBox] = useState(false);
 
     // User Data Hooks
     const [iRData, setIRData] = useState({});
@@ -33,9 +40,18 @@ export default function Home() {
     // Data Expansion Panel Hooks
     const [expanded, setExpanded] = React.useState(false);
 
+    // Util UI Functions
     const handleExandPanel = (panel) => (event, isExpanded) => {
         setExpanded(isExpanded ? panel : false);
     };
+
+    const handleOpenDeleteBox = (id) => {
+        setOpenDeleteBox(id);
+    }
+
+    const handleCloseDeleteBox = () => {
+        setOpenDeleteBox();
+    }
 
 
     function handleRandomCheck() {
@@ -137,7 +153,6 @@ export default function Home() {
             }).then(response => {
                 return response.json();
             }).then(res => {
-                console.log(res.response)
                 if (res.response === "new_ep_added") {
                     toast.success("Endpoint Added!");
                     getIRStatusData();
@@ -150,7 +165,151 @@ export default function Home() {
         } else {
             toast.error("Missing Parameters")
         }
+    }
 
+
+    function handleGenerateOnRequestReport(ep) {
+        setLoadStatus("Loading");
+        const endpoint = "https://tanmoysg.com/is-running/" + username + "/generate/report/on-request"
+        fetch(endpoint, {
+            method: "POST",
+            cache: "no-cache",
+            headers: {
+                "content_type": "application/json",
+            },
+            body: JSON.stringify({
+                "password": password,
+                "endpoint": ep
+            })
+        }).then(response => {
+            return response.json();
+        }).then(res => {
+            if (res['response'] === "report_sent") {
+                toast.success("Report Generated & Mailed")
+            } else {
+                toast.error("There was an error.")
+            }
+        });
+        setLoadStatus("Ready");
+    }
+
+
+    function handleBulkCheck() {
+        setLoadStatus("Loading");
+        const endpoint = "https://tanmoysg.com/is-running/" + username + "/check-all/"
+        fetch(endpoint, {
+            method: "POST",
+            cache: "no-cache",
+            headers: {
+                "content_type": "application/json",
+            },
+            body: JSON.stringify({
+                "password": password
+            })
+        }).then(response => {
+            return response.json();
+        }).then(res => {
+            if (res['response'] === "bulk_check_success") {
+                toast.success("Bulk Check Complete!")
+            } else {
+                toast.error("There was an error.")
+            }
+            setMetrics();
+            setTimeout(function () {
+                getIRStatusData();
+            }, 200)
+        });
+        setLoadStatus("Ready");
+    }
+
+
+    function handleGenerateReport(mode) {
+        setLoadStatus("Loading");
+        const endpoint = "https://tanmoysg.com/is-running/" + username + "/generate/report/" + mode;
+        fetch(endpoint, {
+            method: "POST",
+            cache: "no-cache",
+            headers: {
+                "content_type": "application/json",
+            },
+            body: JSON.stringify({
+                "password": password
+            })
+        }).then(response => {
+            return response.json();
+        }).then(res => {
+            if (res['response'] === "report_sent") {
+                toast.success("Report Generated & Mailed")
+            } else {
+                toast.error("There was an error.")
+            }
+        });
+        setLoadStatus("Ready");
+    }
+
+
+    function handleCheckUptime(ep) {
+        setLoadStatus("Loading");
+        const endpoint = "https://tanmoysg.com/is-running/" + username + "/check/endpoint"
+        fetch(endpoint, {
+            method: "POST",
+            cache: "no-cache",
+            headers: {
+                "content_type": "application/json",
+            },
+            body: JSON.stringify({
+                "password": password,
+                "endpoint": ep
+            })
+        }).then(response => {
+            return response.json();
+        }).then(res => {
+            if (res['running'] === "Downtime") {
+                toast.error(<span>{res["status"]} - Down</span>)
+            } else {
+                toast.success(<span>{res["status"]} - Running</span>)
+            }
+            setMetrics();
+            setTimeout(function () {
+                getIRStatusData();
+            }, 200)
+        });
+        setLoadStatus("Ready");
+    }
+
+
+    function handleDeleteEP(ep) {
+        setLoadStatus("Loading");
+        if (openDeleteBox !== undefined) {
+            const endpoint = "https://tanmoysg.com/is-running/" + username + "/delete/endpoint"
+            fetch(endpoint, {
+                method: "POST",
+                cache: "no-cache",
+                headers: {
+                    "content_type": "application/json",
+                },
+                body: JSON.stringify({
+                    "password": password,
+                    "endpoint": ep
+                })
+            }).then(response => {
+                return response.json();
+            }).then(res => {
+                if (res.response === "ep_deleted") {
+                    toast.success("Endpoint Deleted!");
+                    setMetrics();
+                    setTimeout(function () {
+                        getIRStatusData();
+                    }, 500)
+                    handleCloseDeleteBox();
+                } else {
+                    toast.error("Endpoint Doesn't Exist in EPLib.")
+                }
+            });
+            setLoadStatus("Ready");
+        } else {
+            toast.error("Missing Parameters")
+        }
     }
 
     useEffect(() => {
@@ -160,7 +319,6 @@ export default function Home() {
         getIRStatusData(username, password)
     }, [])
 
-    console.log(iRData)
     return (
         <Grid
             container
@@ -198,24 +356,24 @@ export default function Home() {
                             spacing={1}
                         >
                             <Grid item xs={12} sm={12} md={6} lg={6} xl={6}>
-                                <Button onClick={() => { }} variant="outlined" size="large"
+                                <Button onClick={handleBulkCheck} variant="outlined" size="large"
                                     style={{ width: "100%", fontFamily: "Work Sans", color: "rgb(187, 183, 223)" }}
                                 >
                                     Run Bulk Check
                                 </Button>
                             </Grid>
                             <Grid item xs={12} sm={12} md={6} lg={6} xl={6}>
-                                <Button onClick={() => { }} variant="outlined" size="large"
+                                <Button onClick={() => { handleGenerateReport("cumulative") }} variant="outlined" size="large"
                                     style={{ width: "100%", fontFamily: "Work Sans", color: "rgb(187, 183, 223)" }}
                                 >
                                     Generate Summary
                                 </Button>
                             </Grid>
                             <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-                                <Button onClick={() => { }} variant="outlined" size="large"
+                                <Button onClick={() => { handleGenerateReport("each-owner") }} variant="outlined" size="large"
                                     style={{ width: "100%", fontFamily: "Work Sans", color: "rgb(187, 183, 223)" }}
                                 >
-                                    Generate Report for All Endpoints
+                                    Mail report to Each Owner
                                 </Button>
                             </Grid>
                         </Grid>
@@ -292,7 +450,7 @@ export default function Home() {
                                     spacing={0.5}
                                 >
                                     <Grid item>
-                                        {loadStatus === "Ready" ? <span>✔️</span> : <Spinner type="dots2" style={{ color: "#e7a000" }} />}
+                                        {loadStatus === "Ready" ? <span>✔️</span> : <Spinner type={loadingSpinners[Math.floor(Math.random() * loadingSpinners.length)]} style={{ color: "#e7a000" }} />}
                                     </Grid>
                                     <Grid item>
                                         {loadStatus ? loadStatus : "Spinning Up Process"}
@@ -455,9 +613,9 @@ export default function Home() {
                                             <Select
                                                 fullWidth
                                             >
-                                                <MenuItem value={6} onClick={(e) => { setEndpointRoutine(e.target.value) }} >6 Hours - Recommended for Vital Services</MenuItem>
-                                                <MenuItem value={12} onClick={(e) => { setEndpointRoutine(e.target.value) }} >12 Hours - Recommended for Moderately Important Services </MenuItem>
-                                                <MenuItem value={24} onClick={(e) => { setEndpointRoutine(e.target.value) }} >24 Hours - Recommended for other non-vital Services</MenuItem>
+                                                <MenuItem value={6} onClick={(e) => { setEndpointRoutine(6) }} >6 Hours - Recommended for Vital Services</MenuItem>
+                                                <MenuItem value={12} onClick={(e) => { setEndpointRoutine(12) }} >12 Hours - Recommended for Moderately Important Services </MenuItem>
+                                                <MenuItem value={24} onClick={(e) => { setEndpointRoutine(24) }} >24 Hours - Recommended for other non-vital Services</MenuItem>
                                             </Select>
                                         </div>
                                     </Grid>
@@ -579,34 +737,247 @@ export default function Home() {
                                             <Typography sx={{ display: { xs: 'none', lg: 'block' } }} style={{ fontFamily: "Work Sans", fontSize: "0.8rem" }}>
                                                 Last Checked on {iRData[ep]['last-check-timestamp'].substring(0, iRData[ep]['last-check-timestamp'].indexOf("."))}
                                                 <br />
-                                                Routine check every {iRData[ep]['routine']} Hours
+                                                Routine check runs every {iRData[ep]['routine']} Hours
                                             </Typography>
-
                                         </AccordionSummary>
-                                        <AccordionDetails style={{ padding: "7.5px 15px", color: "rgb(187, 183, 223)" }}>
+                                        <AccordionDetails style={{ fontFamily: "Work Sans", padding: "15px 15px", color: "rgb(187, 183, 223)" }}>
                                             <Grid
                                                 container
                                                 direction="row"
-                                                justifyContent="center"
+                                                justifyContent="flex-start"
                                                 alignItems="stretch"
+                                                spacing={1}
                                             >
                                                 <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
-                                                    <Typography style={{ overflow: "auto" }}>
+                                                    <Typography style={{ fontFamily: "Work Sans", overflow: "auto" }}>
                                                         {
                                                             iRData[ep]['running'] === "Downtime" ?
                                                                 <FontAwesomeIcon icon={faExclamationCircle} style={{ marginRight: "7.5px", color: "#AA0023" }} />
                                                                 : <FontAwesomeIcon icon={faCheckCircle} style={{ marginRight: "7.5px", color: "#3faf62" }} />
                                                         }
-                                                        {ep}
+                                                        <span style={{ fontWeight: "600", textDecoration: iRData[ep]['running'] === "Downtime" ? "underline #AA0023" : "underline #3faf62", textDecorationThickness: "3px" }}>{ep}</span> is
+                                                        {iRData[ep]['running'] === "Downtime" ? <span> Down. Take appropriate action to avoid service disruption. </span> : <span> Running. You're good to go! </span>}
                                                     </Typography>
+                                                    <Divider style={{ margin: "15px 0 10px 0" }} />
+                                                </Grid>
+                                                <Grid item xs={12} sm={12} md={12} lg={6} xl={6}>
+                                                    <Typography style={{ fontFamily: "Work Sans" }}>
+                                                        Endpoint Name : <span style={{ fontWeight: "600", }}>{iRData[ep]['endpoint-name']}</span>
+                                                    </Typography>
+                                                    <Typography style={{ fontFamily: "Work Sans" }}>
+                                                        Description : <span style={{ fontWeight: "600", }}>{iRData[ep]["description"]}</span>
+                                                    </Typography>
+                                                    <Typography style={{ fontFamily: "Work Sans" }}>
+                                                        Routine Check : Every <span style={{ fontWeight: "600", }}>{iRData[ep]["routine"]}</span> Hours
+                                                    </Typography>
+                                                </Grid>
+                                                <Grid item xs={12} sm={12} md={12} lg={6} xl={6}>
+                                                    <Typography style={{ fontFamily: "Work Sans", margin: "0 0 5px 0" }}>
+                                                        Server Response
+                                                    </Typography>
+                                                    <Paper variant="outlined" style={{ padding: "7.5px 10px" }} >
+                                                        <Typography style={{ fontFamily: "Work Sans" }}>
+                                                            <Grid
+                                                                container
+                                                                direction="row"
+                                                                justifyContent="flex-start"
+                                                                alignItems="center"
+                                                                spacing={0.5}
+                                                            >
+                                                                <Grid item>
+                                                                    <Spinner type="toggle" style={{ color: iRData[ep]['running'] === "Downtime" ? "#AA0023" : "#3faf62" }} />
+                                                                </Grid>
+                                                                <Grid item>
+                                                                    <Typography style={{ fontFamily: "Work Sans" }}>
+                                                                        {iRData[ep]['status']} - {iRData[ep]['response']}
+                                                                    </Typography>
+                                                                </Grid>
+                                                            </Grid>
+                                                            <Grid
+                                                                container
+                                                                direction="row"
+                                                                justifyContent="flex-start"
+                                                                alignItems="center"
+                                                                spacing={0.5}
+                                                            >
+                                                                <Grid item>
+                                                                    <Typography style={{ fontFamily: "Work Sans", fontSize: "0.8rem" }}>
+                                                                        🕔
+                                                                    </Typography>
+                                                                </Grid>
+                                                                <Grid item>
+                                                                    <Typography style={{ fontFamily: "Work Sans", fontSize: "0.8rem" }}>
+                                                                        Last checked at {iRData[ep]['last-check-timestamp']}
+                                                                    </Typography>
+                                                                </Grid>
+                                                            </Grid>
+                                                        </Typography>
+                                                    </Paper>
+                                                </Grid>
+                                                <Grid item xs={12} sm={12} md={12} lg={12} xl={12} style={{ marginTop: "5px" }}>
+                                                    <Typography style={{ fontFamily: "Work Sans", overflow: "auto" }}>
+                                                        <span style={{ marginRight: "5px" }}>
+                                                            Mailing List
+                                                        </span>
+                                                        <span style={{}}>
+                                                            {
+                                                                iRData[ep]['mail-list'].map((mail) => {
+                                                                    return (
+                                                                        <Chip variant="filled" label={mail} size="small"
+                                                                            avatar={<Avatar style={{ fontFamily: "Work Sans", fontWeight: "600", backgroundColor: "#fff4bd", color: "rgb(193 98 0 / 95%)" }}>{mail.substring(0, 1).toUpperCase()}</Avatar>}
+                                                                            style={{ fontFamily: "Work Sans", backgroundColor: "rgb(193 98 0 / 95%)", color: "#fff4bd", marginRight: "3px" }}
+                                                                        />
+                                                                    );
+                                                                })
+                                                            }
+                                                        </span>
+                                                    </Typography>
+                                                </Grid>
+                                                <Grid item xs={12} sm={12} md={12} lg={12} xl={12} style={{ marginTop: "5px" }}>
+                                                    <Divider style={{ margin: "10px 0 15px 0" }} />
+                                                    <Typography style={{ fontFamily: "Work Sans", fontWeight: "600" }}>
+                                                        <FontAwesomeIcon icon={faChartLine} style={{ marginRight: "7.5px" }} />
+                                                        Past Activity
+                                                    </Typography>
+                                                    <Typography style={{ fontFamily: "Work Sans", fontSize: "0.8rem" }} sx={{ display: { xl: 'none', xs: 'block' } }} >
+                                                        Past Activities are only available on Large Screen Devices
+                                                    </Typography>
+                                                    <div style={{ marginTop: "15px", width: "100%", overflow: "auto", display: "flex", padding: "10px 0" }}>
+                                                        {
+                                                            iRData[ep]['reports'].reverse().map((report) => {
+                                                                return (
+                                                                    <>
+                                                                        <Paper variant="outlined" style={{ padding: "7.5px 10px", minWidth: "33%", marginRight: "10px" }} sx={{ display: { xs: 'none', md: 'block' } }}>
+                                                                            <Typography style={{ fontFamily: "Work Sans", fontSize: "0.8rem", margin: "2px 0" }}>
+                                                                                {
+                                                                                    report['running'] === "Downtime" ?
+                                                                                        <FontAwesomeIcon icon={faExclamationCircle} style={{ marginRight: "7.5px", color: "#AA0023" }} />
+                                                                                        : <FontAwesomeIcon icon={faCheckCircle} style={{ marginRight: "7.5px", color: "#3faf62" }} />
+                                                                                }
+                                                                                {report['status']} - {report['response']}
+                                                                            </Typography>
+                                                                            <Typography style={{ fontFamily: "Work Sans", fontSize: "0.8rem", margin: "2px 0" }}>
+                                                                                Response Time - <span style={{ fontWeight: "600" }}>{report['response-time']}s</span>
+                                                                            </Typography>
+                                                                            {
+                                                                                report['redirects'] !== null ?
+                                                                                    <Accordion
+                                                                                        style={{ borderRadius: "5px", margin: "5px 0" }}
+                                                                                    >
+                                                                                        <AccordionSummary
+                                                                                            expandIcon={<ExpandMoreIcon />}
+                                                                                            aria-controls="panel1a-content"
+                                                                                            id="panel1a-header"
+                                                                                            style={{ margin: "0 0" }}
+                                                                                        >
+                                                                                            <Typography style={{ fontFamily: "Work Sans", fontSize: "0.8rem" }}>{report['redirects'].length} Redirect(s)</Typography>
+                                                                                        </AccordionSummary>
+                                                                                        <AccordionDetails style={{ margin: "0 0" }} >
+                                                                                            <Typography style={{ fontFamily: "Work Sans", fontSize: "0.8rem" }}>
+                                                                                                <center>
+                                                                                                    {ep}
+                                                                                                    {
+                                                                                                        report['redirects'].map((url) => {
+                                                                                                            return (
+                                                                                                                <span>
+                                                                                                                    <div>
+                                                                                                                        <FontAwesomeIcon icon={faArrowDown} style={{ margin: "0 3px", color: "#3faf62" }} />
+                                                                                                                    </div>
+                                                                                                                    <div>{url.replace(/(^\w+:|^)\/\//, '')}</div>
+                                                                                                                </span>
+                                                                                                            );
+                                                                                                        })
+                                                                                                    }
+                                                                                                </center>
+                                                                                            </Typography>
+                                                                                        </AccordionDetails>
+                                                                                    </Accordion>
+                                                                                    : <span>No Redirects</span>
+                                                                            }
+                                                                            <Typography style={{ fontFamily: "Work Sans", fontSize: "0.8rem", margin: "2px 0" }}>
+                                                                                Checked at {report['timestamp']}
+                                                                            </Typography>
+                                                                        </Paper>
+                                                                    </>
+                                                                )
+                                                            })
+                                                        }
+                                                    </div>
+                                                </Grid>
+                                                <Grid item xs={12} sm={12} md={12} lg={12} xl={12} style={{ marginTop: "5px" }} >
+                                                    {expanded === iRData[ep]['_id'] ? <ResponseTimeChart data={iRData[ep]['reports']} color={iRData[ep]['running'] === "Downtime" ? "#AA0023" : "#3faf62"} /> : undefined}
+                                                </Grid>
+                                                <Grid item xs={12} sm={12} md={12} lg={12} xl={12} style={{ marginTop: "5px" }} >
+                                                    <Divider style={{ margin: "10px 0 15px 0" }} />
+                                                    <Typography style={{ fontFamily: "Work Sans", fontWeight: "600" }}>
+                                                        <FontAwesomeIcon icon={faCog} style={{ marginRight: "7.5px" }} />
+                                                        Action Items
+                                                    </Typography>
+                                                    <div style={{ marginTop: "15px" }}>
+                                                        <Grid
+                                                            container
+                                                            direction="row"
+                                                            justifyContent="space-between"
+                                                            alignItems="center"
+                                                            spacing={1}
+                                                        >
+                                                            <Grid item xs={12} sm={12} md={6} lg={4} xl={4}>
+                                                                <Button onClick={() => { handleCheckUptime(ep) }} variant="outlined" size="large"
+                                                                    style={{ width: "100%", fontFamily: "Work Sans", color: "rgb(187, 183, 223)" }}
+                                                                >
+                                                                    Check Uptime
+                                                                </Button>
+                                                            </Grid>
+                                                            <Grid item xs={12} sm={12} md={6} lg={4} xl={4}>
+                                                                <Button onClick={() => { handleGenerateOnRequestReport(ep) }} variant="outlined" size="large"
+                                                                    style={{ width: "100%", fontFamily: "Work Sans", color: "rgb(187, 183, 223)" }}
+                                                                >
+                                                                    Generate Report
+                                                                </Button>
+                                                            </Grid>
+                                                            <Grid item xs={12} sm={12} md={12} lg={4} xl={4}>
+                                                                <Button onClick={() => { handleOpenDeleteBox(iRData[ep]['_id']); }} variant="outlined" size="large"
+                                                                    style={{ width: "100%", fontFamily: "Work Sans", color: "#AA0023", borderColor: "#AA0023" }}
+                                                                >
+                                                                    <FontAwesomeIcon icon={faTrash} style={{ margin: "0 5px 0 0" }} />
+                                                                    Delete Endpoint
+                                                                </Button>
+                                                                <Dialog
+                                                                    open={openDeleteBox === iRData[ep]['_id']}
+                                                                    onClose={handleCloseDeleteBox}
+                                                                    style={{ fontFamily: "Work Sans", borderRadius: "10px", padding: "10px" }}
+                                                                >
+                                                                    <DialogTitle id="alert-dialog-title" style={{ fontFamily: "Work Sans", backgroundColor: "rgb(8, 7, 17)", color: "rgb(187, 183, 223)" }}>
+                                                                        Delete Endpoint {ep}
+                                                                    </DialogTitle>
+                                                                    <DialogContent style={{ fontFamily: "Work Sans", backgroundColor: "rgb(8, 7, 17)", color: "rgb(187, 183, 223)" }}>
+                                                                        <Divider style={{ margin: "0 0 15px 0", }} />
+                                                                        <DialogContentText id="alert-dialog-description" style={{ fontFamily: "Work Sans", }}>
+                                                                            Deleting this Endpoint would remove it from the EP Library and no routine check will be performed on it.
+                                                                            <br />
+                                                                            Are you sure you want to delete the endpoint?
+                                                                        </DialogContentText>
+                                                                    </DialogContent>
+                                                                    <DialogActions style={{ backgroundColor: "rgb(8, 7, 17)", color: "rgb(187, 183, 223)", }}>
+                                                                        <Button style={{ fontFamily: "Work Sans", color: "#FFF4BD", borderColor: "#FFF4BD" }} onClick={handleCloseDeleteBox}>Cancel</Button>
+                                                                        <Button style={{ fontFamily: "Work Sans", }}
+                                                                            onClick={() => { handleDeleteEP(ep) }} autoFocus
+                                                                            variant="contained" color="error"
+                                                                        >
+                                                                            Delete
+                                                                        </Button>
+                                                                    </DialogActions>
+                                                                </Dialog>
+                                                            </Grid>
+                                                        </Grid>
+                                                    </div>
                                                 </Grid>
                                             </Grid>
                                         </AccordionDetails>
                                     </Accordion>
                                 )
-                            }) : <Typography style={{ fontFamily: "Work Sans", fontSize: "0.8rem" }}>Wohoo! No Downtime!</Typography>
+                            }) : <Typography style={{ fontFamily: "Work Sans", fontSize: "1rem" }}>All EPLib Endpoints are shown here!</Typography>
                         }
-
                     </div>
                 </div>
             </Grid>
@@ -619,8 +990,6 @@ export default function Home() {
                     <Spinner type="moon" />
                 </Grid>
             {*/}
-        </Grid>
+        </Grid >
     );
 }
-
-{/* ⣿ */ }
