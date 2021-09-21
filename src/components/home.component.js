@@ -250,7 +250,7 @@ export default function Home() {
                         <Typography style={{ fontFamily: "Work Sans", fontSize: "1rem" }}>
                             <Grid container>
                                 <Grid item xs={7} sm={7} md={5} lg={5} xl={5}>
-                                    Active EPs in EPLib
+                                    Active Endpoints
                                 </Grid>
                                 <Grid item xs={5} sm={5} md={5} lg={5} xl={5}>
                                     <span style={{ margin: "0 0 0 5px", fontWeight: "600", padding: "5px 7px", border: "2px solid rgb(187, 183, 223)", borderRadius: "50px" }}><FontAwesomeIcon icon={faLink} style={{ margin: "0 5px 0 0" }} />{iRData ? Object.keys(iRData).length : 0} <b>/</b> {iRData ? Object.keys(iRData).length : 0}</span>
@@ -312,7 +312,7 @@ export default function Home() {
                         >
                             <Grid item>
                                 <FontAwesomeIcon icon={faLink} style={{ marginRight: "7.5px" }} />
-                                <span style={{ fontWeight: "600" }}>EP Library</span>
+                                <span style={{ fontWeight: "600" }}>EP Library<sup>µ</sup></span>
                             </Grid>
                             <Grid item>
                                 <IconButton aria-label="delete" onClick={() => { setTopToolBar('add_ep_panel') }}>
@@ -539,7 +539,7 @@ export default function Home() {
                                             id="panel1bh-header"
                                             style={{ padding: "7.5px 15px", color: "rgb(187, 183, 223)" }}
                                         >
-                                            <Typography sty={{ width: '40%', flexShrink: 0 }}>
+                                            <Typography sx={{ width: '90%', flexShrink: 0, display: { lg: 'none', md: 'block' } }}>
                                                 <Tooltip title={ep} arrow={true} style={{ fontFamily: "Work Sans" }} >
                                                     <Typography style={{ fontFamily: "Work Sans", overflow: "hidden" }}>
                                                         {
@@ -547,7 +547,19 @@ export default function Home() {
                                                                 <FontAwesomeIcon icon={faExclamationCircle} style={{ marginRight: "7.5px", color: "#AA0023" }} />
                                                                 : <FontAwesomeIcon icon={faCheckCircle} style={{ marginRight: "7.5px", color: "#3faf62" }} />
                                                         }
-                                                        {ep.replace(/(^\w+:|^)\/\//, '')}
+                                                        {ep.replace(/(^\w+:|^)\/\//, '').substring(0, 20)}
+                                                    </Typography>
+                                                </Tooltip>
+                                            </Typography>
+                                            <Typography sx={{ width: '40%', flexShrink: 0, display: { xs: 'none', lg: 'block' } }}>
+                                                <Tooltip title={ep} arrow={true} style={{ fontFamily: "Work Sans" }} >
+                                                    <Typography style={{ fontFamily: "Work Sans", overflow: "hidden" }}>
+                                                        {
+                                                            iRData[ep]['running'] === "Downtime" ?
+                                                                <FontAwesomeIcon icon={faExclamationCircle} style={{ marginRight: "7.5px", color: "#AA0023" }} />
+                                                                : <FontAwesomeIcon icon={faCheckCircle} style={{ marginRight: "7.5px", color: "#3faf62" }} />
+                                                        }
+                                                        {ep.replace(/(^\w+:|^)\/\//, '').substring(0, 35)}
                                                     </Typography>
                                                 </Tooltip>
                                             </Typography>
@@ -565,15 +577,30 @@ export default function Home() {
                                                 }
                                             </Typography>
                                             <Typography sx={{ display: { xs: 'none', lg: 'block' } }} style={{ fontFamily: "Work Sans", fontSize: "0.8rem" }}>
-                                                Last Checked: {iRData[ep]['last-check-timestamp']}
+                                                Last Checked on {iRData[ep]['last-check-timestamp'].substring(0, iRData[ep]['last-check-timestamp'].indexOf("."))}
+                                                <br />
+                                                Routine check every {iRData[ep]['routine']} Hours
                                             </Typography>
 
                                         </AccordionSummary>
                                         <AccordionDetails style={{ padding: "7.5px 15px", color: "rgb(187, 183, 223)" }}>
-                                            <Typography>
-                                                Nulla facilisi. Phasellus sollicitudin nulla et quam mattis feugiat.
-                                                Aliquam eget maximus est, id dignissim quam.
-                                            </Typography>
+                                            <Grid
+                                                container
+                                                direction="row"
+                                                justifyContent="center"
+                                                alignItems="stretch"
+                                            >
+                                                <Grid item xs={12} sm={12} md={12} lg={12} xl={12}>
+                                                    <Typography style={{ overflow: "auto" }}>
+                                                        {
+                                                            iRData[ep]['running'] === "Downtime" ?
+                                                                <FontAwesomeIcon icon={faExclamationCircle} style={{ marginRight: "7.5px", color: "#AA0023" }} />
+                                                                : <FontAwesomeIcon icon={faCheckCircle} style={{ marginRight: "7.5px", color: "#3faf62" }} />
+                                                        }
+                                                        {ep}
+                                                    </Typography>
+                                                </Grid>
+                                            </Grid>
                                         </AccordionDetails>
                                     </Accordion>
                                 )
