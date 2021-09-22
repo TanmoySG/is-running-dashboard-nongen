@@ -53,6 +53,15 @@ export default function Home() {
         setOpenDeleteBox();
     }
 
+    const handleLogout = () => {
+        window.sessionStorage.removeItem("status");
+        window.sessionStorage.removeItem("email");
+        window.sessionStorage.removeItem("name");
+        window.sessionStorage.removeItem("token");
+        window.sessionStorage.removeItem("password");
+        window.location.reload()
+    }
+
 
     function handleRandomCheck() {
         const searchEp = "https://tanmoysg.com/is-running/check-uptime?endpoint=" + randomCheckEP;
@@ -342,7 +351,9 @@ export default function Home() {
                                 <span style={{ fontWeight: "600" }}>isRunning</span>
                             </Grid>
                             <Grid item>
-                                <FontAwesomeIcon icon={faSignOutAlt} style={{ color: "#AA0023" }} />
+                                <IconButton aria-label="logout" onClick={handleLogout}>
+                                    <FontAwesomeIcon icon={faSignOutAlt} style={{ color: "#AA0023" }} />
+                                </IconButton>
                             </Grid>
                         </Grid>
                     </Typography>
